@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask
+from flask import Flask, render_template
 from dotenv import load_dotenv
 
 from app.config import Config
@@ -25,17 +25,7 @@ def create_app() -> Flask:
 
     @app.get("/")
     def home():
-        return {
-            "message": "Cloud Notes App Running",
-            "environment": app.config["ENVIRONMENT"],
-            "routes": {
-                "health": "/",
-                "liveness": "/health/live",
-                "readiness": "/health/ready",
-                "notes": "/notes",
-                "upload": "/upload",
-            },
-        }
+        return render_template("index.html", environment=app.config["ENVIRONMENT"])
 
     return app
 

@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cloud Notes App</title>
+    <style>
+      :root {
+        --bg: #f4efe7;
+        --panel: rgba(255, 251, 246, 0.84);
+        --panel-strong: #fffaf1;
+        --ink: #1f1d1a;
+        --muted: #61594f;
+        --accent: #1f6f5f;
+        --accent-2: #db8f38;
+        --line: rgba(31, 29, 26, 0.12);
+        --shadow: 0 24px 80px rgba(51, 36, 19, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Avenir Next", "Segoe UI", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(219, 143, 56, 0.22), transparent 28%),
+          radial-gradient(circle at top right, rgba(31, 111, 95, 0.18), transparent 24%),
+          linear-gradient(160deg, #f7f2ea 0%, #efe6da 50%, #e8dfd4 100%);
+      }
+
+      .shell {
+        width: min(1120px, calc(100% - 32px));
+        margin: 32px auto;
+        padding: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 28px;
+        background: var(--panel);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(16px);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 20px;
+        align-items: stretch;
+      }
+
+      .hero-card,
+      .status-card,
+      .composer,
+      .notes-panel {
+        border-radius: 24px;
+        border: 1px solid var(--line);
+        background: var(--panel-strong);
+      }
+
+      .hero-card {
+        padding: 28px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .hero-card::after {
+        content: "";
+        position: absolute;
+        inset: auto -10% -30% auto;
+        width: 220px;
+        height: 220px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(31, 111, 95, 0.16), transparent 68%);
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(31, 111, 95, 0.1);
+        color: var(--accent);
+        font-size: 0.85rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 16px 0 10px;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: clamp(2.1rem, 5vw, 4rem);
+        line-height: 0.95;
+      }
+
+      .hero p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.65;
+      }
+
+      .status-card {
+        padding: 24px;
+        display: grid;
+        gap: 14px;
+      }
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        width: fit-content;
+        background: rgba(31, 111, 95, 0.1);
+        color: var(--accent);
+        font-weight: 600;
+      }
+
+      .status-badge::before {
+        content: "";
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: currentColor;
+        box-shadow: 0 0 0 8px rgba(31, 111, 95, 0.12);
+      }
+
+      .api-links {
+        display: grid;
+        gap: 10px;
+      }
+
+      .api-links a {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        text-decoration: none;
+        color: var(--ink);
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: #fff;
+        border: 1px solid var(--line);
+      }
+
+      .api-links span {
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        gap: 20px;
+        margin-top: 20px;
+      }
+
+      .composer {
+        padding: 22px;
+      }
+
+      .composer h2,
+      .notes-panel h2 {
+        margin: 0 0 12px;
+        font-size: 1.05rem;
+      }
+
+      .composer p,
+      .notes-panel p {
+        margin: 0 0 18px;
+        color: var(--muted);
+      }
+
+      .field {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+
+      label {
+        font-size: 0.92rem;
+        font-weight: 600;
+      }
+
+      input,
+      textarea {
+        width: 100%;
+        padding: 13px 14px;
+        border-radius: 16px;
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--ink);
+        font: inherit;
+      }
+
+      textarea {
+        min-height: 140px;
+        resize: vertical;
+      }
+
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 16px;
+        padding: 13px 18px;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.18s ease, opacity 0.18s ease, box-shadow 0.18s ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+      }
+
+      button:disabled {
+        opacity: 0.6;
+        cursor: wait;
+      }
+
+      .primary-btn {
+        width: 100%;
+        color: #fff;
+        background: linear-gradient(135deg, var(--accent), #2f8a77);
+        box-shadow: 0 12px 24px rgba(31, 111, 95, 0.18);
+      }
+
+      .ghost-btn {
+        color: var(--accent-2);
+        background: rgba(219, 143, 56, 0.12);
+      }
+
+      .notes-panel {
+        padding: 22px;
+      }
+
+      .toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .toolbar strong {
+        font-size: 0.95rem;
+      }
+
+      .note-list {
+        display: grid;
+        gap: 14px;
+      }
+
+      .note-card {
+        padding: 18px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(250, 244, 235, 0.96));
+        animation: slideUp 0.35s ease both;
+      }
+
+      .note-card h3 {
+        margin: 0 0 8px;
+        font-size: 1.05rem;
+      }
+
+      .note-card p {
+        margin: 0 0 14px;
+        color: var(--muted);
+        white-space: pre-wrap;
+      }
+
+      .meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .meta small {
+        color: var(--muted);
+      }
+
+      .empty {
+        padding: 24px;
+        border-radius: 18px;
+        border: 1px dashed rgba(31, 29, 26, 0.18);
+        background: rgba(255, 255, 255, 0.6);
+        text-align: center;
+        color: var(--muted);
+      }
+
+      .flash {
+        min-height: 24px;
+        margin-top: 12px;
+        font-size: 0.92rem;
+      }
+
+      .flash.error {
+        color: #a5352d;
+      }
+
+      .flash.success {
+        color: var(--accent);
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 920px) {
+        .hero,
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+
+        .shell {
+          padding: 18px;
+          margin: 18px auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <article class="hero-card">
+          <span class="eyebrow">Cloud Native Demo</span>
+          <h1>Cloud Notes App</h1>
+          <p>
+            This page is a simple frontend for your Flask backend. You can create, view,
+            and delete notes here while the same API still powers Docker, Kubernetes, and
+            your AWS deployment setup.
+          </p>
+        </article>
+
+        <aside class="status-card">
+          <div class="status-badge">App running in {{ environment }}</div>
+          <p>Useful endpoints for your assignment demo and quick checks.</p>
+          <div class="api-links">
+            <a href="/health/live" target="_blank" rel="noreferrer">
+              <strong>Health Check</strong>
+              <span>/health/live</span>
+            </a>
+            <a href="/health/ready" target="_blank" rel="noreferrer">
+              <strong>Readiness</strong>
+              <span>/health/ready</span>
+            </a>
+            <a href="/notes" target="_blank" rel="noreferrer">
+              <strong>Notes API</strong>
+              <span>/notes</span>
+            </a>
+          </div>
+        </aside>
+      </section>
+
+      <section class="workspace">
+        <section class="composer">
+          <h2>Create a Note</h2>
+          <p>Type something below and it will be saved through the backend API.</p>
+
+          <form id="note-form">
+            <div class="field">
+              <label for="title">Title</label>
+              <input id="title" name="title" type="text" placeholder="Weekly deployment update" required />
+            </div>
+
+            <div class="field">
+              <label for="content">Content</label>
+              <textarea
+                id="content"
+                name="content"
+                placeholder="Write your note here..."
+              ></textarea>
+            </div>
+
+            <button class="primary-btn" id="submit-btn" type="submit">Save Note</button>
+            <div id="flash" class="flash"></div>
+          </form>
+        </section>
+
+        <section class="notes-panel">
+          <div class="toolbar">
+            <div>
+              <h2>Saved Notes</h2>
+              <p id="note-count">Loading notes...</p>
+            </div>
+            <button class="ghost-btn" id="refresh-btn" type="button">Refresh</button>
+          </div>
+
+          <div id="notes-container" class="note-list"></div>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const noteForm = document.getElementById("note-form");
+      const submitBtn = document.getElementById("submit-btn");
+      const refreshBtn = document.getElementById("refresh-btn");
+      const notesContainer = document.getElementById("notes-container");
+      const noteCount = document.getElementById("note-count");
+      const flash = document.getElementById("flash");
+
+      function setFlash(message, type = "success") {
+        flash.textContent = message;
+        flash.className = `flash ${type}`;
+      }
+
+      function clearFlash() {
+        flash.textContent = "";
+        flash.className = "flash";
+      }
+
+      function formatDate(value) {
+        if (!value) {
+          return "Unknown time";
+        }
+
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) {
+          return value;
+        }
+
+        return parsed.toLocaleString();
+      }
+
+      function renderNotes(items) {
+        noteCount.textContent = `${items.length} note${items.length === 1 ? "" : "s"} available`;
+
+        if (!items.length) {
+          notesContainer.innerHTML = `
+            <div class="empty">
+              No notes yet. Create your first note from the form on the left.
+            </div>
+          `;
+          return;
+        }
+
+        notesContainer.innerHTML = items
+          .map(
+            (note) => `
+              <article class="note-card">
+                <h3>${escapeHtml(note.title)}</h3>
+                <p>${escapeHtml(note.content || "No content")}</p>
+                <div class="meta">
+                  <small>Updated: ${escapeHtml(formatDate(note.updated_at))}</small>
+                  <button class="ghost-btn" type="button" data-note-id="${note.id}">Delete</button>
+                </div>
+              </article>
+            `
+          )
+          .join("");
+
+        document.querySelectorAll("[data-note-id]").forEach((button) => {
+          button.addEventListener("click", () => deleteNote(button.dataset.noteId));
+        });
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      async function loadNotes() {
+        noteCount.textContent = "Loading notes...";
+
+        try {
+          const response = await fetch("/notes");
+          const data = await response.json();
+          renderNotes(data.items || []);
+        } catch (error) {
+          notesContainer.innerHTML = `
+            <div class="empty">
+              Could not load notes. Please check if the backend is still running.
+            </div>
+          `;
+          noteCount.textContent = "Load failed";
+        }
+      }
+
+      async function deleteNote(noteId) {
+        clearFlash();
+
+        try {
+          const response = await fetch(`/notes/${noteId}`, { method: "DELETE" });
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || "Delete failed.");
+          }
+
+          setFlash(data.message || "Note deleted.");
+          await loadNotes();
+        } catch (error) {
+          setFlash(error.message, "error");
+        }
+      }
+
+      noteForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        clearFlash();
+        submitBtn.disabled = true;
+
+        const formData = new FormData(noteForm);
+        const payload = {
+          title: formData.get("title"),
+          content: formData.get("content"),
+        };
+
+        try {
+          const response = await fetch("/notes", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
+
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.error || "Could not save note.");
+          }
+
+          noteForm.reset();
+          setFlash(`Saved "${data.title}" successfully.`);
+          await loadNotes();
+        } catch (error) {
+          setFlash(error.message, "error");
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
+
+      refreshBtn.addEventListener("click", loadNotes);
+      loadNotes();
+    </script>
+  </body>
+</html>
