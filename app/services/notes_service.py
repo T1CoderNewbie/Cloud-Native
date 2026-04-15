@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import delete, desc, func, insert, select, update
+from sqlalchemy import delete, desc, func, insert, or_, select, update
 
 from app.config import Config
 from app.models.db import get_engine, notes_table, row_to_note
@@ -15,7 +15,27 @@ def _note_cache_key(note_id: int) -> str:
     return "notes:{note_id}".format(note_id=note_id)
 
 
-def list_notes() -> List[Dict[str, Any]]:
+def list_notes(search_term: str = "") -> List[Dict[str, Any]]:
+    normalized_search = search_term.strip().lower()
+
+    if normalized_search:
+        pattern = "%{term}%".format(term=normalized_search)
+        statement = (
+            select(notes_table)
+            .where(
+                or_(
+                    func.lower(notes_table.c.title).like(pattern),
+                    func.lower(notes_table.c.content).like(pattern),
+                )
+            )
+            .order_by(desc(notes_table.c.updated_at), desc(notes_table.c.id))
+        )
+
+        with get_engine().connect() as connection:
+            rows = connection.execute(statement).mappings().all()
+
+        return [row_to_note(row) for row in rows]
+
     cached_items = get_json(NOTES_CACHE_KEY)
     if cached_items is not None:
         return cached_items

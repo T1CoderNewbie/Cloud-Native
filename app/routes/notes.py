@@ -36,8 +36,9 @@ def _validate_payload(
 
 @notes_bp.get("/")
 def list_notes():
-    items = list_note_records()
-    return {"count": len(items), "items": items}
+    query = request.args.get("q", "").strip()
+    items = list_note_records(query)
+    return {"count": len(items), "items": items, "query": query}
 
 
 @notes_bp.get("/<int:note_id>")

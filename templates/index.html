@@ -240,10 +240,22 @@
         justify-content: space-between;
         gap: 12px;
         margin-bottom: 16px;
+        flex-wrap: wrap;
       }
 
       .toolbar strong {
         font-size: 0.95rem;
+      }
+
+      .toolbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .search-input {
+        min-width: 240px;
       }
 
       .note-list {
@@ -394,7 +406,15 @@
               <h2>Saved Notes</h2>
               <p id="note-count">Loading notes...</p>
             </div>
-            <button class="ghost-btn" id="refresh-btn" type="button">Refresh</button>
+            <div class="toolbar-actions">
+              <input
+                class="search-input"
+                id="search-input"
+                type="search"
+                placeholder="Search notes..."
+              />
+              <button class="ghost-btn" id="refresh-btn" type="button">Refresh</button>
+            </div>
           </div>
 
           <div id="notes-container" class="note-list"></div>
@@ -406,9 +426,11 @@
       const noteForm = document.getElementById("note-form");
       const submitBtn = document.getElementById("submit-btn");
       const refreshBtn = document.getElementById("refresh-btn");
+      const searchInput = document.getElementById("search-input");
       const notesContainer = document.getElementById("notes-container");
       const noteCount = document.getElementById("note-count");
       const flash = document.getElementById("flash");
+      let currentSearchTerm = "";
 
       function setFlash(message, type = "success") {
         flash.textContent = message;
@@ -434,7 +456,11 @@
       }
 
       function renderNotes(items) {
-        noteCount.textContent = `${items.length} note${items.length === 1 ? "" : "s"} available`;
+        const summary = currentSearchTerm
+          ? `${items.length} result${items.length === 1 ? "" : "s"} for "${currentSearchTerm}"`
+          : `${items.length} note${items.length === 1 ? "" : "s"} available`;
+
+        noteCount.textContent = summary;
 
         if (!items.length) {
           notesContainer.innerHTML = `
@@ -478,7 +504,8 @@
         noteCount.textContent = "Loading notes...";
 
         try {
-          const response = await fetch("/notes");
+          const query = currentSearchTerm ? `?q=${encodeURIComponent(currentSearchTerm)}` : "";
+          const response = await fetch(`/notes${query}`);
           const data = await response.json();
           renderNotes(data.items || []);
         } catch (error) {
@@ -545,6 +572,10 @@
       });
 
       refreshBtn.addEventListener("click", loadNotes);
+      searchInput.addEventListener("input", (event) => {
+        currentSearchTerm = event.target.value.trim();
+        loadNotes();
+      });
       loadNotes();
     </script>
   </body>

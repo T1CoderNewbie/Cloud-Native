@@ -41,6 +41,12 @@ def test_health_and_notes_crud(tmp_path):
     assert response.status_code == 200
     assert response.get_json()["count"] == 1
 
+    response = client.post(
+        "/notes",
+        json={"title": "Kafka events", "content": "Add event publishing for notes"},
+    )
+    assert response.status_code == 201
+
     response = client.put(
         "/notes/{note_id}".format(note_id=note_id),
         json={"title": "Assignment 2 Updated", "content": "RDS, Docker, Terraform"},
@@ -53,6 +59,11 @@ def test_health_and_notes_crud(tmp_path):
 
     response = client.get("/notes/{note_id}".format(note_id=note_id))
     assert response.status_code == 404
+
+    response = client.get("/notes?q=kafka")
+    assert response.status_code == 200
+    assert response.get_json()["count"] == 1
+    assert response.get_json()["items"][0]["title"] == "Kafka events"
 
 
 def test_homepage_renders_notes_ui(tmp_path):
