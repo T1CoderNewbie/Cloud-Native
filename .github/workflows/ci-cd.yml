@@ -5,6 +5,7 @@ on:
     branches: ["main"]
   push:
     branches: ["main"]
+  workflow_dispatch:
 
 env:
   PYTHON_VERSION: "3.12"
@@ -45,7 +46,7 @@ jobs:
         run: terraform -chdir=terraform validate
 
   build_and_push:
-    if: github.event_name == 'push'
+    if: github.event_name == 'workflow_dispatch'
     needs: test
     runs-on: ubuntu-latest
     outputs:
@@ -77,7 +78,7 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/cloud-notes-app:latest
 
   deploy_to_eks:
-    if: github.event_name == 'push'
+    if: github.event_name == 'workflow_dispatch'
     needs: build_and_push
     runs-on: ubuntu-latest
     steps:

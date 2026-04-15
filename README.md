@@ -146,6 +146,11 @@ Deployment-related files:
 - `terraform/`
 - `.github/workflows/ci-cd.yml`
 
+Workflow note:
+
+- normal pushes run tests and Terraform checks
+- AWS build and deployment are triggered manually from the GitHub Actions tab after Docker Hub and AWS secrets are configured
+
 ## Assignment Notes
 
 - Keep the GitHub repository public.

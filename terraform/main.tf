@@ -43,11 +43,11 @@ module "eks" {
   name               = var.cluster_name
   kubernetes_version = var.kubernetes_version
 
-  endpoint_public_access                    = true
-  enable_cluster_creator_admin_permissions  = true
-  authentication_mode                       = "API_AND_CONFIG_MAP"
-  vpc_id                                    = module.vpc.vpc_id
-  subnet_ids                                = module.vpc.private_subnets
+  endpoint_public_access                   = true
+  enable_cluster_creator_admin_permissions = true
+  authentication_mode                      = "API_AND_CONFIG_MAP"
+  vpc_id                                   = module.vpc.vpc_id
+  subnet_ids                               = module.vpc.private_subnets
 
   addons = {
     coredns                = {}
@@ -100,22 +100,22 @@ resource "aws_db_subnet_group" "postgres" {
 }
 
 resource "aws_db_instance" "postgres" {
-  identifier             = "${local.name}-postgres"
-  engine                 = "postgres"
-  engine_version         = "16.3"
-  instance_class         = var.db_instance_class
-  allocated_storage      = var.db_allocated_storage
-  max_allocated_storage  = 100
-  db_name                = var.db_name
-  username               = var.db_username
-  password               = var.db_password
-  db_subnet_group_name   = aws_db_subnet_group.postgres.name
-  vpc_security_group_ids = [aws_security_group.rds.id]
-  skip_final_snapshot    = true
-  publicly_accessible    = false
-  deletion_protection    = false
+  identifier              = "${local.name}-postgres"
+  engine                  = "postgres"
+  engine_version          = "16.3"
+  instance_class          = var.db_instance_class
+  allocated_storage       = var.db_allocated_storage
+  max_allocated_storage   = 100
+  db_name                 = var.db_name
+  username                = var.db_username
+  password                = var.db_password
+  db_subnet_group_name    = aws_db_subnet_group.postgres.name
+  vpc_security_group_ids  = [aws_security_group.rds.id]
+  skip_final_snapshot     = true
+  publicly_accessible     = false
+  deletion_protection     = false
   backup_retention_period = 7
-  multi_az               = false
+  multi_az                = false
 
   tags = merge(local.tags, { Name = "${local.name}-postgres" })
 }
