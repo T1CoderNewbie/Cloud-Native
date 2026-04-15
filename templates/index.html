@@ -230,6 +230,10 @@
         background: rgba(219, 143, 56, 0.12);
       }
 
+      .ghost-btn.hidden {
+        display: none;
+      }
+
       .notes-panel {
         padding: 22px;
       }
@@ -295,6 +299,12 @@
         color: var(--muted);
       }
 
+      .note-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
       .empty {
         padding: 24px;
         border-radius: 18px;
@@ -349,8 +359,8 @@
           <span class="eyebrow">Cloud Native Demo</span>
           <h1>Cloud Notes App</h1>
           <p>
-            This page is a simple frontend for your Flask backend. You can create, view,
-            and delete notes here while the same API still powers Docker, Kubernetes, and
+            This page is a simple frontend for your Flask backend. You can create, edit,
+            view, and delete notes here while the same API still powers Docker, Kubernetes, and
             your AWS deployment setup.
           </p>
         </article>
@@ -377,10 +387,11 @@
 
       <section class="workspace">
         <section class="composer">
-          <h2>Create a Note</h2>
-          <p>Type something below and it will be saved through the backend API.</p>
+          <h2 id="composer-title">Create a Note</h2>
+          <p id="composer-copy">Type something below and it will be saved through the backend API.</p>
 
           <form id="note-form">
+            <input id="editing-note-id" type="hidden" value="" />
             <div class="field">
               <label for="title">Title</label>
               <input id="title" name="title" type="text" placeholder="Weekly deployment update" required />
@@ -396,6 +407,7 @@
             </div>
 
             <button class="primary-btn" id="submit-btn" type="submit">Save Note</button>
+            <button class="ghost-btn hidden" id="cancel-edit-btn" type="button">Cancel Edit</button>
             <div id="flash" class="flash"></div>
           </form>
         </section>
@@ -424,7 +436,13 @@
 
     <script>
       const noteForm = document.getElementById("note-form");
+      const titleInput = document.getElementById("title");
+      const contentInput = document.getElementById("content");
+      const composerTitle = document.getElementById("composer-title");
+      const composerCopy = document.getElementById("composer-copy");
+      const editingNoteIdInput = document.getElementById("editing-note-id");
       const submitBtn = document.getElementById("submit-btn");
+      const cancelEditBtn = document.getElementById("cancel-edit-btn");
       const refreshBtn = document.getElementById("refresh-btn");
       const searchInput = document.getElementById("search-input");
       const notesContainer = document.getElementById("notes-container");
@@ -479,16 +497,56 @@
                 <p>${escapeHtml(note.content || "No content")}</p>
                 <div class="meta">
                   <small>Updated: ${escapeHtml(formatDate(note.updated_at))}</small>
-                  <button class="ghost-btn" type="button" data-note-id="${note.id}">Delete</button>
+                  <div class="note-actions">
+                    <button class="ghost-btn" type="button" data-edit-note-id="${note.id}">Edit</button>
+                    <button class="ghost-btn" type="button" data-note-id="${note.id}">Delete</button>
+                  </div>
                 </div>
               </article>
             `
           )
           .join("");
 
+        document.querySelectorAll("[data-edit-note-id]").forEach((button) => {
+          button.addEventListener("click", () => startEditingNote(button.dataset.editNoteId));
+        });
         document.querySelectorAll("[data-note-id]").forEach((button) => {
           button.addEventListener("click", () => deleteNote(button.dataset.noteId));
         });
+      }
+
+      function resetComposer() {
+        editingNoteIdInput.value = "";
+        composerTitle.textContent = "Create a Note";
+        composerCopy.textContent = "Type something below and it will be saved through the backend API.";
+        submitBtn.textContent = "Save Note";
+        cancelEditBtn.classList.add("hidden");
+        noteForm.reset();
+      }
+
+      async function startEditingNote(noteId) {
+        clearFlash();
+
+        try {
+          const response = await fetch(`/notes/${noteId}`);
+          const note = await response.json();
+
+          if (!response.ok) {
+            throw new Error(note.error || "Could not load note.");
+          }
+
+          editingNoteIdInput.value = String(note.id);
+          composerTitle.textContent = "Edit Note";
+          composerCopy.textContent = "Update the note below and save your changes.";
+          titleInput.value = note.title || "";
+          contentInput.value = note.content || "";
+          submitBtn.textContent = "Update Note";
+          cancelEditBtn.classList.remove("hidden");
+          titleInput.focus();
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        } catch (error) {
+          setFlash(error.message, "error");
+        }
       }
 
       function escapeHtml(value) {
@@ -542,14 +600,15 @@
         submitBtn.disabled = true;
 
         const formData = new FormData(noteForm);
+        const editingNoteId = editingNoteIdInput.value;
         const payload = {
           title: formData.get("title"),
           content: formData.get("content"),
         };
 
         try {
-          const response = await fetch("/notes", {
-            method: "POST",
+          const response = await fetch(editingNoteId ? `/notes/${editingNoteId}` : "/notes", {
+            method: editingNoteId ? "PUT" : "POST",
             headers: {
               "Content-Type": "application/json",
             },
@@ -561,8 +620,12 @@
             throw new Error(data.error || "Could not save note.");
           }
 
-          noteForm.reset();
-          setFlash(`Saved "${data.title}" successfully.`);
+          setFlash(
+            editingNoteId
+              ? `Updated "${data.title}" successfully.`
+              : `Saved "${data.title}" successfully.`
+          );
+          resetComposer();
           await loadNotes();
         } catch (error) {
           setFlash(error.message, "error");
@@ -571,11 +634,17 @@
         }
       });
 
+      cancelEditBtn.addEventListener("click", () => {
+        clearFlash();
+        resetComposer();
+      });
+
       refreshBtn.addEventListener("click", loadNotes);
       searchInput.addEventListener("input", (event) => {
         currentSearchTerm = event.target.value.trim();
         loadNotes();
       });
+      resetComposer();
       loadNotes();
     </script>
   </body>
