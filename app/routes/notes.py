@@ -1,6 +1,8 @@
+import json
+
 from typing import Any, Dict, Optional, Tuple
 
-from flask import Blueprint, request
+from flask import Blueprint, Response, request
 
 from app.services.notes_service import (
     create_note as create_note_record,
@@ -39,6 +41,22 @@ def list_notes():
     query = request.args.get("q", "").strip()
     items = list_note_records(query)
     return {"count": len(items), "items": items, "query": query}
+
+
+@notes_bp.get("/export")
+def export_notes():
+    query = request.args.get("q", "").strip()
+    items = list_note_records(query)
+    payload = {"count": len(items), "items": items, "query": query}
+    response_body = json.dumps(payload, indent=2)
+
+    return Response(
+        response_body,
+        mimetype="application/json",
+        headers={
+            "Content-Disposition": 'attachment; filename="cloud-notes-export.json"'
+        },
+    )
 
 
 @notes_bp.get("/<int:note_id>")

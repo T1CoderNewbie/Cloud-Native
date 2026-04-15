@@ -425,6 +425,7 @@
                 type="search"
                 placeholder="Search notes..."
               />
+              <button class="ghost-btn" id="export-btn" type="button">Export JSON</button>
               <button class="ghost-btn" id="refresh-btn" type="button">Refresh</button>
             </div>
           </div>
@@ -444,6 +445,7 @@
       const submitBtn = document.getElementById("submit-btn");
       const cancelEditBtn = document.getElementById("cancel-edit-btn");
       const refreshBtn = document.getElementById("refresh-btn");
+      const exportBtn = document.getElementById("export-btn");
       const searchInput = document.getElementById("search-input");
       const notesContainer = document.getElementById("notes-container");
       const noteCount = document.getElementById("note-count");
@@ -640,6 +642,10 @@
       });
 
       refreshBtn.addEventListener("click", loadNotes);
+      exportBtn.addEventListener("click", () => {
+        const query = currentSearchTerm ? `?q=${encodeURIComponent(currentSearchTerm)}` : "";
+        window.open(`/notes/export${query}`, "_blank", "noopener,noreferrer");
+      });
       searchInput.addEventListener("input", (event) => {
         currentSearchTerm = event.target.value.trim();
         loadNotes();
