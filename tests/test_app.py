@@ -53,3 +53,15 @@ def test_health_and_notes_crud(tmp_path):
 
     response = client.get("/notes/{note_id}".format(note_id=note_id))
     assert response.status_code == 404
+
+
+def test_homepage_renders_notes_ui(tmp_path):
+    client = create_test_client(tmp_path)
+
+    response = client.get("/")
+    page = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "Cloud Notes App" in page
+    assert "Create a Note" in page
+    assert "Saved Notes" in page
