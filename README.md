@@ -2,7 +2,11 @@
 
 Cloud Notes App is a simple cloud-native notes API built for a Developing for the Cloud assignment. The project includes a Flask backend, Docker support, AWS-ready deployment files, and infrastructure templates for EKS, RDS, Istio, and Terraform.
 
-## What This Project Uses
+## Project Goal
+
+This project demonstrates how a locally developed application can be prepared for cloud deployment using containerisation, infrastructure-as-code, and Kubernetes-based deployment practices. The application allows users to create, view, update, and delete notes, while also supporting AWS-oriented services such as RDS, S3, Redis, Kafka, EKS, and Istio.
+
+## Technology Stack
 
 - Python Flask
 - PostgreSQL or SQLite
@@ -31,7 +35,7 @@ cloud-notes-app/
 └── requirements.txt
 ```
 
-## Run Locally
+## Setup Instructions
 
 ### Option 1: Quick local run with SQLite
 
@@ -57,7 +61,7 @@ Open:
 - `http://localhost:5000/health/live`
 - `http://localhost:5000/notes`
 
-### Option 2: Run with Docker Compose
+### Option 2: Run the containerised stack with Docker Compose
 
 ```bash
 docker compose up --build
@@ -70,6 +74,23 @@ This starts:
 - Redis
 - Kafka
 
+## Development and Testing
+
+Run the automated tests with:
+
+```bash
+source .venv/bin/activate
+pytest
+```
+
+Quick manual API test:
+
+```bash
+curl -X POST http://localhost:5000/notes \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Hello","content":"My first note"}'
+```
+
 ## Main API Endpoints
 
 - `GET /`
@@ -80,14 +101,6 @@ This starts:
 - `PUT /notes/<id>`
 - `DELETE /notes/<id>`
 - `POST /upload`
-
-Example:
-
-```bash
-curl -X POST http://localhost:5000/notes \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Hello","content":"My first note"}'
-```
 
 ## Environment Variables
 
@@ -106,7 +119,7 @@ AWS_REGION=ap-southeast-1
 
 If you want S3 upload to work, add real AWS credentials in `.env`.
 
-## Cloud Deployment
+## Cloud Deployment Guidance
 
 This repo already includes:
 
@@ -124,6 +137,14 @@ Basic cloud deployment flow:
 4. Install Istio.
 5. Apply Kubernetes manifests.
 6. Point Route 53 to the load balancer if needed.
+
+Deployment-related files:
+
+- `Dockerfile`
+- `docker-compose.yml`
+- `k8s/`
+- `terraform/`
+- `.github/workflows/ci-cd.yml`
 
 ## Assignment Notes
 
