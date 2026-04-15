@@ -148,8 +148,8 @@ Deployment-related files:
 
 Workflow note:
 
-- normal pushes run tests and Terraform checks
-- AWS build and deployment are triggered manually from the GitHub Actions tab after Docker Hub and AWS secrets are configured
+- `CI-CD` runs automatically on push and pull request for tests and Terraform validation
+- `Deploy AWS` is a separate manual workflow for Docker Hub build and EKS deployment after secrets are configured
 
 ## Assignment Notes
 

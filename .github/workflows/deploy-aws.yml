@@ -1,0 +1,84 @@
+name: Deploy AWS
+
+on:
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  build_and_push:
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set image tag
+        id: image
+        run: echo "image=${{ secrets.DOCKERHUB_USERNAME }}/cloud-notes-app:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.image.outputs.image }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/cloud-notes-app:latest
+
+  deploy_to_eks:
+    needs: build_and_push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name "${{ secrets.EKS_CLUSTER_NAME }}" --region "${{ secrets.AWS_REGION }}"
+
+      - name: Create namespace and secret
+        run: |
+          kubectl apply -f k8s/base/namespace.yaml
+          kubectl -n cloud-notes create secret generic cloud-notes-secrets \
+            --from-literal=DATABASE_URL='${{ secrets.DATABASE_URL }}' \
+            --from-literal=REDIS_URL='${{ secrets.REDIS_URL }}' \
+            --from-literal=KAFKA_BOOTSTRAP_SERVERS='${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}' \
+            --from-literal=AWS_ACCESS_KEY_ID='${{ secrets.APP_AWS_ACCESS_KEY_ID }}' \
+            --from-literal=AWS_SECRET_ACCESS_KEY='${{ secrets.APP_AWS_SECRET_ACCESS_KEY }}' \
+            --from-literal=AWS_BUCKET_NAME='${{ secrets.AWS_BUCKET_NAME }}' \
+            --from-literal=S3_ENDPOINT_URL='${{ secrets.S3_ENDPOINT_URL }}' \
+            --from-literal=S3_PUBLIC_BASE_URL='${{ secrets.S3_PUBLIC_BASE_URL }}' \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy manifests
+        run: |
+          kubectl apply -f k8s/base/configmap.yaml
+          kubectl apply -f k8s/base/service.yaml
+          kubectl apply -f k8s/base/deployment.yaml
+          kubectl apply -f k8s/base/destinationrule.yaml
+          kubectl apply -f k8s/base/gateway.yaml
+          kubectl apply -f k8s/base/virtualservice.yaml
+          kubectl apply -f k8s/base/hpa.yaml
+          kubectl -n cloud-notes set image deployment/cloud-notes-app cloud-notes-app=${{ needs.build_and_push.outputs.image }}
+          kubectl rollout status deployment/cloud-notes-app -n cloud-notes
