@@ -433,6 +433,7 @@
                 type="search"
                 placeholder="Search notes..."
               />
+              <button class="ghost-btn hidden" id="clear-search-btn" type="button">Clear Search</button>
               <button class="ghost-btn" id="export-btn" type="button">Export JSON</button>
               <button class="ghost-btn" id="refresh-btn" type="button">Refresh</button>
             </div>
@@ -453,6 +454,7 @@
       const submitBtn = document.getElementById("submit-btn");
       const cancelEditBtn = document.getElementById("cancel-edit-btn");
       const refreshBtn = document.getElementById("refresh-btn");
+      const clearSearchBtn = document.getElementById("clear-search-btn");
       const exportBtn = document.getElementById("export-btn");
       const searchInput = document.getElementById("search-input");
       const notesContainer = document.getElementById("notes-container");
@@ -489,11 +491,16 @@
           : `${items.length} note${items.length === 1 ? "" : "s"} available`;
 
         noteCount.textContent = summary;
+        clearSearchBtn.classList.toggle("hidden", !currentSearchTerm);
 
         if (!items.length) {
           notesContainer.innerHTML = `
             <div class="empty">
-              No notes yet. Create your first note from the form on the left.
+              ${
+                currentSearchTerm
+                  ? `No notes match "${escapeHtml(currentSearchTerm)}". Try another keyword.`
+                  : "No notes yet. Create your first note from the form on the left."
+              }
             </div>
           `;
           return;
@@ -650,6 +657,11 @@
       });
 
       refreshBtn.addEventListener("click", loadNotes);
+      clearSearchBtn.addEventListener("click", () => {
+        currentSearchTerm = "";
+        searchInput.value = "";
+        loadNotes();
+      });
       exportBtn.addEventListener("click", () => {
         const query = currentSearchTerm ? `?q=${encodeURIComponent(currentSearchTerm)}` : "";
         window.open(`/notes/export${query}`, "_blank", "noopener,noreferrer");

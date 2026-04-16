@@ -104,3 +104,4 @@ def test_homepage_renders_notes_ui(tmp_path):
     assert "Export JSON" in page
     assert "Notes Stats" in page
     assert "Recent Notes" in page
+    assert "Clear Search" in page
