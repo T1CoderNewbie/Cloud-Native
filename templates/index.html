@@ -105,6 +105,30 @@
         gap: 14px;
       }
 
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+      }
+
+      .stat-tile {
+        padding: 14px;
+        border-radius: 16px;
+        border: 1px solid var(--line);
+        background: #fff;
+      }
+
+      .stat-tile span {
+        display: block;
+        color: var(--muted);
+        font-size: 0.82rem;
+        margin-bottom: 6px;
+      }
+
+      .stat-tile strong {
+        font-size: 1.1rem;
+      }
+
       .status-badge {
         display: inline-flex;
         align-items: center;
@@ -345,6 +369,10 @@
           grid-template-columns: 1fr;
         }
 
+        .stats-grid {
+          grid-template-columns: 1fr;
+        }
+
         .shell {
           padding: 18px;
           margin: 18px auto;
@@ -368,6 +396,20 @@
         <aside class="status-card">
           <div class="status-badge">App running in {{ environment }}</div>
           <p>Useful endpoints for your assignment demo and quick checks.</p>
+          <div class="stats-grid">
+            <div class="stat-tile">
+              <span>Total Notes</span>
+              <strong id="stat-count">0</strong>
+            </div>
+            <div class="stat-tile">
+              <span>Title Characters</span>
+              <strong id="stat-title-chars">0</strong>
+            </div>
+            <div class="stat-tile">
+              <span>Average Content</span>
+              <strong id="stat-average-content">0</strong>
+            </div>
+          </div>
           <div class="api-links">
             <a href="/health/live" target="_blank" rel="noreferrer">
               <strong>Health Check</strong>
@@ -460,6 +502,9 @@
       const notesContainer = document.getElementById("notes-container");
       const noteCount = document.getElementById("note-count");
       const flash = document.getElementById("flash");
+      const statCount = document.getElementById("stat-count");
+      const statTitleChars = document.getElementById("stat-title-chars");
+      const statAverageContent = document.getElementById("stat-average-content");
       let currentSearchTerm = "";
 
       function setFlash(message, type = "success") {
@@ -583,6 +628,7 @@
           const response = await fetch(`/notes${query}`);
           const data = await response.json();
           renderNotes(data.items || []);
+          await loadStats();
         } catch (error) {
           notesContainer.innerHTML = `
             <div class="empty">
@@ -590,6 +636,25 @@
             </div>
           `;
           noteCount.textContent = "Load failed";
+          statCount.textContent = "-";
+          statTitleChars.textContent = "-";
+          statAverageContent.textContent = "-";
+        }
+      }
+
+      async function loadStats() {
+        try {
+          const query = currentSearchTerm ? `?q=${encodeURIComponent(currentSearchTerm)}` : "";
+          const response = await fetch(`/notes/stats${query}`);
+          const data = await response.json();
+
+          statCount.textContent = data.count ?? 0;
+          statTitleChars.textContent = data.total_title_characters ?? 0;
+          statAverageContent.textContent = data.average_content_length ?? 0;
+        } catch (error) {
+          statCount.textContent = "-";
+          statTitleChars.textContent = "-";
+          statAverageContent.textContent = "-";
         }
       }
 

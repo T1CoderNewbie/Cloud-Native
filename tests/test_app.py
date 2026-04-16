@@ -105,3 +105,4 @@ def test_homepage_renders_notes_ui(tmp_path):
     assert "Notes Stats" in page
     assert "Recent Notes" in page
     assert "Clear Search" in page
+    assert "Total Notes" in page
