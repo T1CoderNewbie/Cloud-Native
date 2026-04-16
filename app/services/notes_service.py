@@ -69,6 +69,16 @@ def get_note_stats(search_term: str = "") -> Dict[str, Any]:
     }
 
 
+def list_recent_notes(limit: int = 5) -> List[Dict[str, Any]]:
+    safe_limit = max(1, min(limit, 20))
+    statement = select(notes_table).order_by(desc(notes_table.c.updated_at), desc(notes_table.c.id)).limit(safe_limit)
+
+    with get_engine().connect() as connection:
+        rows = connection.execute(statement).mappings().all()
+
+    return [row_to_note(row) for row in rows]
+
+
 def get_note(note_id: int) -> Optional[Dict[str, Any]]:
     cache_key = _note_cache_key(note_id)
     cached_note = get_json(cache_key)

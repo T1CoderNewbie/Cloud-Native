@@ -8,6 +8,7 @@ from app.services.notes_service import (
     create_note as create_note_record,
     delete_note as delete_note_record,
     get_note as get_note_record,
+    list_recent_notes as list_recent_note_records,
     get_note_stats as get_note_stats_record,
     list_notes as list_note_records,
     update_note as update_note_record,
@@ -64,6 +65,17 @@ def export_notes():
 def note_stats():
     query = request.args.get("q", "").strip()
     return get_note_stats_record(query)
+
+
+@notes_bp.get("/recent")
+def recent_notes():
+    try:
+        limit = int(request.args.get("limit", "5"))
+    except ValueError:
+        return {"error": "Field 'limit' must be an integer."}, 400
+
+    items = list_recent_note_records(limit)
+    return {"count": len(items), "items": items, "limit": max(1, min(limit, 20))}
 
 
 @notes_bp.get("/<int:note_id>")

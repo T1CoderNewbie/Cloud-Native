@@ -80,6 +80,16 @@ def test_health_and_notes_crud(tmp_path):
     assert stats["total_content_characters"] == len("Add event publishing for notes")
     assert stats["average_content_length"] == float(len("Add event publishing for notes"))
 
+    response = client.get("/notes/recent?limit=1")
+    assert response.status_code == 200
+    recent = response.get_json()
+    assert recent["count"] == 1
+    assert recent["limit"] == 1
+    assert len(recent["items"]) == 1
+
+    response = client.get("/notes/recent?limit=abc")
+    assert response.status_code == 400
+
 
 def test_homepage_renders_notes_ui(tmp_path):
     client = create_test_client(tmp_path)
@@ -93,3 +103,4 @@ def test_homepage_renders_notes_ui(tmp_path):
     assert "Saved Notes" in page
     assert "Export JSON" in page
     assert "Notes Stats" in page
+    assert "Recent Notes" in page
