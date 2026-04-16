@@ -50,6 +50,25 @@ def list_notes(search_term: str = "") -> List[Dict[str, Any]]:
     return items
 
 
+def get_note_stats(search_term: str = "") -> Dict[str, Any]:
+    items = list_notes(search_term)
+    total_notes = len(items)
+    total_title_characters = sum(len(note.get("title", "")) for note in items)
+    total_content_characters = sum(len(note.get("content", "")) for note in items)
+
+    average_content_length = 0
+    if total_notes:
+        average_content_length = round(total_content_characters / total_notes, 2)
+
+    return {
+        "count": total_notes,
+        "query": search_term.strip(),
+        "total_title_characters": total_title_characters,
+        "total_content_characters": total_content_characters,
+        "average_content_length": average_content_length,
+    }
+
+
 def get_note(note_id: int) -> Optional[Dict[str, Any]]:
     cache_key = _note_cache_key(note_id)
     cached_note = get_json(cache_key)

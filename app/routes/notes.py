@@ -8,6 +8,7 @@ from app.services.notes_service import (
     create_note as create_note_record,
     delete_note as delete_note_record,
     get_note as get_note_record,
+    get_note_stats as get_note_stats_record,
     list_notes as list_note_records,
     update_note as update_note_record,
 )
@@ -57,6 +58,12 @@ def export_notes():
             "Content-Disposition": 'attachment; filename="cloud-notes-export.json"'
         },
     )
+
+
+@notes_bp.get("/stats")
+def note_stats():
+    query = request.args.get("q", "").strip()
+    return get_note_stats_record(query)
 
 
 @notes_bp.get("/<int:note_id>")

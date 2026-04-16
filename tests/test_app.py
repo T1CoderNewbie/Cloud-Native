@@ -71,6 +71,15 @@ def test_health_and_notes_crud(tmp_path):
     assert "attachment; filename=\"cloud-notes-export.json\"" == response.headers["Content-Disposition"]
     assert "Kafka events" in response.get_data(as_text=True)
 
+    response = client.get("/notes/stats?q=kafka")
+    assert response.status_code == 200
+    stats = response.get_json()
+    assert stats["count"] == 1
+    assert stats["query"] == "kafka"
+    assert stats["total_title_characters"] == len("Kafka events")
+    assert stats["total_content_characters"] == len("Add event publishing for notes")
+    assert stats["average_content_length"] == float(len("Add event publishing for notes"))
+
 
 def test_homepage_renders_notes_ui(tmp_path):
     client = create_test_client(tmp_path)
@@ -83,3 +92,4 @@ def test_homepage_renders_notes_ui(tmp_path):
     assert "Create a Note" in page
     assert "Saved Notes" in page
     assert "Export JSON" in page
+    assert "Notes Stats" in page
