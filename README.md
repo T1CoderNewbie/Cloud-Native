@@ -59,6 +59,7 @@ Open:
 
 - `http://localhost:5000`
 - `http://localhost:5000/health/live`
+- `http://localhost:5000/health/summary`
 - `http://localhost:5000/notes`
 
 ### Option 2: Run the containerised stack with Docker Compose
@@ -82,6 +83,12 @@ Run the automated tests with:
 source .venv/bin/activate
 pytest
 ```
+
+Useful local checks:
+
+- `http://localhost:5000/health/live` returns a small JSON response to confirm the app is alive.
+- `http://localhost:5000/health/ready` checks database and Redis readiness.
+- `http://localhost:5000/health/summary` shows readiness details plus the current note count.
 
 Quick manual API test:
 
@@ -150,6 +157,12 @@ Workflow note:
 
 - `CI-CD` runs automatically on push and pull request for tests and Terraform validation
 - `Deploy AWS` is a separate manual workflow for Docker Hub build and EKS deployment after secrets are configured
+
+GitHub Actions tip:
+
+- Older commits may still show a red `X` if they were pushed before the workflow was fixed.
+- You do not need to rewrite history for that. What matters is that your newest commits pass the current `CI-CD` workflow.
+- For AWS deployment, open the `Deploy AWS` workflow in GitHub Actions and run it manually after adding the required secrets.
 
 ## Assignment Notes
 
