@@ -117,6 +117,8 @@ def test_homepage_renders_notes_ui(tmp_path):
     assert "Health Summary" in page
     assert "Clear Search" in page
     assert "Total Notes" in page
+    assert "Title length: 0 / 255" in page
+    assert "Content length: 0 / 5000" in page
 
 
 def test_note_validation_rejects_too_long_title(tmp_path):

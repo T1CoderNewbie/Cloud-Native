@@ -201,6 +201,11 @@
         margin-bottom: 14px;
       }
 
+      .field-hint {
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
       label {
         font-size: 0.92rem;
         font-weight: 600;
@@ -448,7 +453,15 @@
             <input id="editing-note-id" type="hidden" value="" />
             <div class="field">
               <label for="title">Title</label>
-              <input id="title" name="title" type="text" placeholder="Weekly deployment update" required />
+              <input
+                id="title"
+                name="title"
+                type="text"
+                maxlength="255"
+                placeholder="Weekly deployment update"
+                required
+              />
+              <small class="field-hint" id="title-counter">Title length: 0 / 255</small>
             </div>
 
             <div class="field">
@@ -456,8 +469,10 @@
               <textarea
                 id="content"
                 name="content"
+                maxlength="5000"
                 placeholder="Write your note here..."
               ></textarea>
+              <small class="field-hint" id="content-counter">Content length: 0 / 5000</small>
             </div>
 
             <button class="primary-btn" id="submit-btn" type="submit">Save Note</button>
@@ -509,6 +524,8 @@
       const statCount = document.getElementById("stat-count");
       const statTitleChars = document.getElementById("stat-title-chars");
       const statAverageContent = document.getElementById("stat-average-content");
+      const titleCounter = document.getElementById("title-counter");
+      const contentCounter = document.getElementById("content-counter");
       let currentSearchTerm = "";
 
       function setFlash(message, type = "success") {
@@ -519,6 +536,11 @@
       function clearFlash() {
         flash.textContent = "";
         flash.className = "flash";
+      }
+
+      function updateComposerCounters() {
+        titleCounter.textContent = `Title length: ${titleInput.value.length} / 255`;
+        contentCounter.textContent = `Content length: ${contentInput.value.length} / 5000`;
       }
 
       function formatDate(value) {
@@ -588,6 +610,7 @@
         submitBtn.textContent = "Save Note";
         cancelEditBtn.classList.add("hidden");
         noteForm.reset();
+        updateComposerCounters();
       }
 
       async function startEditingNote(noteId) {
@@ -608,6 +631,7 @@
           contentInput.value = note.content || "";
           submitBtn.textContent = "Update Note";
           cancelEditBtn.classList.remove("hidden");
+          updateComposerCounters();
           titleInput.focus();
           window.scrollTo({ top: 0, behavior: "smooth" });
         } catch (error) {
@@ -735,6 +759,8 @@
         const query = currentSearchTerm ? `?q=${encodeURIComponent(currentSearchTerm)}` : "";
         window.open(`/notes/export${query}`, "_blank", "noopener,noreferrer");
       });
+      titleInput.addEventListener("input", updateComposerCounters);
+      contentInput.addEventListener("input", updateComposerCounters);
       searchInput.addEventListener("input", (event) => {
         currentSearchTerm = event.target.value.trim();
         loadNotes();
