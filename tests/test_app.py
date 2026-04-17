@@ -27,6 +27,10 @@ def test_health_and_notes_crud(tmp_path):
     response = client.get("/health/ready")
     assert response.status_code == 200
 
+    response = client.get("/health/summary")
+    assert response.status_code == 200
+    assert response.get_json()["note_count"] == 0
+
     response = client.post(
         "/notes",
         json={"title": "Assignment 2", "content": "Deploy on EKS with Istio"},
@@ -90,6 +94,12 @@ def test_health_and_notes_crud(tmp_path):
     response = client.get("/notes/recent?limit=abc")
     assert response.status_code == 400
 
+    response = client.get("/health/summary")
+    assert response.status_code == 200
+    summary = response.get_json()
+    assert summary["note_count"] == 1
+    assert summary["checks"]["database"]["ok"] is True
+
 
 def test_homepage_renders_notes_ui(tmp_path):
     client = create_test_client(tmp_path)
@@ -104,6 +114,7 @@ def test_homepage_renders_notes_ui(tmp_path):
     assert "Export JSON" in page
     assert "Notes Stats" in page
     assert "Recent Notes" in page
+    assert "Health Summary" in page
     assert "Clear Search" in page
     assert "Total Notes" in page
 
