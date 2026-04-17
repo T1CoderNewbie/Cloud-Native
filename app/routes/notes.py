@@ -16,6 +16,8 @@ from app.services.notes_service import (
 
 
 notes_bp = Blueprint("notes", __name__, url_prefix="/notes")
+MAX_TITLE_LENGTH = 255
+MAX_CONTENT_LENGTH = 5000
 
 
 def _validate_payload(
@@ -34,6 +36,10 @@ def _validate_payload(
 
     if require_title and not title:
         return {}, "Field 'title' cannot be empty."
+    if len(title) > MAX_TITLE_LENGTH:
+        return {}, "Field 'title' must be 255 characters or fewer."
+    if len(content) > MAX_CONTENT_LENGTH:
+        return {}, "Field 'content' must be 5000 characters or fewer."
 
     return {"title": title, "content": content}, None
 

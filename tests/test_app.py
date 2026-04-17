@@ -106,3 +106,15 @@ def test_homepage_renders_notes_ui(tmp_path):
     assert "Recent Notes" in page
     assert "Clear Search" in page
     assert "Total Notes" in page
+
+
+def test_note_validation_rejects_too_long_title(tmp_path):
+    client = create_test_client(tmp_path)
+
+    response = client.post(
+        "/notes",
+        json={"title": "A" * 256, "content": "This title is too long."},
+    )
+
+    assert response.status_code == 400
+    assert "title" in response.get_json()["error"]
