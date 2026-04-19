@@ -296,6 +296,54 @@
         gap: 14px;
       }
 
+      .recent-activity {
+        margin-bottom: 16px;
+        padding: 18px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.72);
+      }
+
+      .recent-activity-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: baseline;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+      }
+
+      .recent-activity-header h3 {
+        margin: 0;
+        font-size: 0.98rem;
+      }
+
+      .recent-activity-header span {
+        color: var(--muted);
+        font-size: 0.84rem;
+      }
+
+      .recent-activity-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .activity-item {
+        padding: 12px 14px;
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        background: #fff;
+      }
+
+      .activity-item strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .activity-item small {
+        color: var(--muted);
+      }
+
       .note-card {
         padding: 18px;
         border-radius: 18px;
@@ -508,6 +556,16 @@
             </div>
           </div>
 
+          <section class="recent-activity">
+            <div class="recent-activity-header">
+              <h3>Recent Activity</h3>
+              <span>Latest updates from your notes</span>
+            </div>
+            <div id="recent-activity" class="recent-activity-list">
+              <div class="empty">Loading recent activity...</div>
+            </div>
+          </section>
+
           <div id="notes-container" class="note-list"></div>
         </section>
       </section>
@@ -527,6 +585,7 @@
       const exportBtn = document.getElementById("export-btn");
       const searchInput = document.getElementById("search-input");
       const notesContainer = document.getElementById("notes-container");
+      const recentActivity = document.getElementById("recent-activity");
       const noteCount = document.getElementById("note-count");
       const flash = document.getElementById("flash");
       const statCount = document.getElementById("stat-count");
@@ -612,6 +671,28 @@
         });
       }
 
+      function renderRecentActivity(items) {
+        if (!items.length) {
+          recentActivity.innerHTML = `
+            <div class="empty">
+              No recent note activity yet. Your latest notes will appear here.
+            </div>
+          `;
+          return;
+        }
+
+        recentActivity.innerHTML = items
+          .map(
+            (note) => `
+              <div class="activity-item">
+                <strong>${escapeHtml(note.title)}</strong>
+                <small>Updated: ${escapeHtml(formatDate(note.updated_at))}</small>
+              </div>
+            `
+          )
+          .join("");
+      }
+
       function resetComposer() {
         editingNoteIdInput.value = "";
         composerTitle.textContent = "Create a Note";
@@ -682,19 +763,30 @@
 
       async function loadStats() {
         try {
-          const query = currentSearchTerm ? `?q=${encodeURIComponent(currentSearchTerm)}` : "";
-          const response = await fetch(`/notes/stats${query}`);
+          const params = new URLSearchParams();
+          params.set("recent_limit", "3");
+          if (currentSearchTerm) {
+            params.set("q", currentSearchTerm);
+          }
+
+          const response = await fetch(`/notes/summary?${params.toString()}`);
           const data = await response.json();
 
-          statCount.textContent = data.count ?? 0;
-          statTitleChars.textContent = data.total_title_characters ?? 0;
-          statContentChars.textContent = data.total_content_characters ?? 0;
-          statAverageContent.textContent = data.average_content_length ?? 0;
+          statCount.textContent = data.stats?.count ?? 0;
+          statTitleChars.textContent = data.stats?.total_title_characters ?? 0;
+          statContentChars.textContent = data.stats?.total_content_characters ?? 0;
+          statAverageContent.textContent = data.stats?.average_content_length ?? 0;
+          renderRecentActivity(data.recent_items || []);
         } catch (error) {
           statCount.textContent = "-";
           statTitleChars.textContent = "-";
           statContentChars.textContent = "-";
           statAverageContent.textContent = "-";
+          recentActivity.innerHTML = `
+            <div class="empty">
+              Could not load recent activity right now.
+            </div>
+          `;
         }
       }
 
