@@ -44,6 +44,7 @@ def test_health_and_notes_crud(tmp_path):
     response = client.get("/notes")
     assert response.status_code == 200
     assert response.get_json()["count"] == 1
+    assert response.get_json()["limit"] is None
 
     response = client.post(
         "/notes",
@@ -68,6 +69,16 @@ def test_health_and_notes_crud(tmp_path):
     assert response.status_code == 200
     assert response.get_json()["count"] == 1
     assert response.get_json()["items"][0]["title"] == "Kafka events"
+
+    response = client.get("/notes?limit=1")
+    assert response.status_code == 200
+    limited = response.get_json()
+    assert limited["count"] == 1
+    assert limited["limit"] == 1
+    assert len(limited["items"]) == 1
+
+    response = client.get("/notes?limit=abc")
+    assert response.status_code == 400
 
     response = client.get("/notes/export?q=kafka")
     assert response.status_code == 200

@@ -15,8 +15,11 @@ def _note_cache_key(note_id: int) -> str:
     return "notes:{note_id}".format(note_id=note_id)
 
 
-def list_notes(search_term: str = "") -> List[Dict[str, Any]]:
+def list_notes(search_term: str = "", limit: Optional[int] = None) -> List[Dict[str, Any]]:
     normalized_search = search_term.strip().lower()
+    safe_limit = None
+    if limit is not None:
+        safe_limit = max(1, min(limit, 100))
 
     if normalized_search:
         pattern = "%{term}%".format(term=normalized_search)
@@ -30,23 +33,29 @@ def list_notes(search_term: str = "") -> List[Dict[str, Any]]:
             )
             .order_by(desc(notes_table.c.updated_at), desc(notes_table.c.id))
         )
+        if safe_limit is not None:
+            statement = statement.limit(safe_limit)
 
         with get_engine().connect() as connection:
             rows = connection.execute(statement).mappings().all()
 
         return [row_to_note(row) for row in rows]
 
-    cached_items = get_json(NOTES_CACHE_KEY)
-    if cached_items is not None:
-        return cached_items
+    if safe_limit is None:
+        cached_items = get_json(NOTES_CACHE_KEY)
+        if cached_items is not None:
+            return cached_items
 
     statement = select(notes_table).order_by(desc(notes_table.c.updated_at), desc(notes_table.c.id))
+    if safe_limit is not None:
+        statement = statement.limit(safe_limit)
 
     with get_engine().connect() as connection:
         rows = connection.execute(statement).mappings().all()
 
     items = [row_to_note(row) for row in rows]
-    set_json(NOTES_CACHE_KEY, items, Config.CACHE_TTL_SECONDS)
+    if safe_limit is None:
+        set_json(NOTES_CACHE_KEY, items, Config.CACHE_TTL_SECONDS)
     return items
 
 

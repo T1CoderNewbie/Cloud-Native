@@ -47,8 +47,19 @@ def _validate_payload(
 @notes_bp.get("/")
 def list_notes():
     query = request.args.get("q", "").strip()
-    items = list_note_records(query)
-    return {"count": len(items), "items": items, "query": query}
+    limit_value = request.args.get("limit")
+
+    if limit_value is None or limit_value == "":
+        limit = None
+    else:
+        try:
+            limit = int(limit_value)
+        except ValueError:
+            return {"error": "Field 'limit' must be an integer."}, 400
+
+    items = list_note_records(query, limit=limit)
+    applied_limit = None if limit is None else max(1, min(limit, 100))
+    return {"count": len(items), "items": items, "query": query, "limit": applied_limit}
 
 
 @notes_bp.get("/export")
