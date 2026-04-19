@@ -84,6 +84,24 @@ def note_stats():
     return get_note_stats_record(query)
 
 
+@notes_bp.get("/summary")
+def note_summary():
+    query = request.args.get("q", "").strip()
+
+    try:
+        recent_limit = int(request.args.get("recent_limit", "3"))
+    except ValueError:
+        return {"error": "Field 'recent_limit' must be an integer."}, 400
+
+    recent_items = list_recent_note_records(recent_limit)
+    return {
+        "query": query,
+        "stats": get_note_stats_record(query),
+        "recent_limit": max(1, min(recent_limit, 20)),
+        "recent_items": recent_items,
+    }
+
+
 @notes_bp.get("/recent")
 def recent_notes():
     try:

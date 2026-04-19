@@ -102,7 +102,18 @@ def test_health_and_notes_crud(tmp_path):
     assert recent["limit"] == 1
     assert len(recent["items"]) == 1
 
+    response = client.get("/notes/summary?recent_limit=1&q=kafka")
+    assert response.status_code == 200
+    summary_payload = response.get_json()
+    assert summary_payload["query"] == "kafka"
+    assert summary_payload["stats"]["count"] == 1
+    assert summary_payload["recent_limit"] == 1
+    assert len(summary_payload["recent_items"]) == 1
+
     response = client.get("/notes/recent?limit=abc")
+    assert response.status_code == 400
+
+    response = client.get("/notes/summary?recent_limit=abc")
     assert response.status_code == 400
 
     response = client.get("/health/summary")
@@ -125,6 +136,7 @@ def test_homepage_renders_notes_ui(tmp_path):
     assert "Export JSON" in page
     assert "Notes Stats" in page
     assert "Recent Notes" in page
+    assert "Notes Summary" in page
     assert "Health Summary" in page
     assert "Clear Search" in page
     assert "Total Notes" in page
