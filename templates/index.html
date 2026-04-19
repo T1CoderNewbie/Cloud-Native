@@ -107,7 +107,7 @@
 
       .stats-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
         gap: 10px;
       }
 
@@ -411,6 +411,10 @@
               <strong id="stat-title-chars">0</strong>
             </div>
             <div class="stat-tile">
+              <span>Content Characters</span>
+              <strong id="stat-content-chars">0</strong>
+            </div>
+            <div class="stat-tile">
               <span>Average Content</span>
               <strong id="stat-average-content">0</strong>
             </div>
@@ -527,6 +531,7 @@
       const flash = document.getElementById("flash");
       const statCount = document.getElementById("stat-count");
       const statTitleChars = document.getElementById("stat-title-chars");
+      const statContentChars = document.getElementById("stat-content-chars");
       const statAverageContent = document.getElementById("stat-average-content");
       const titleCounter = document.getElementById("title-counter");
       const contentCounter = document.getElementById("content-counter");
@@ -670,6 +675,7 @@
           noteCount.textContent = "Load failed";
           statCount.textContent = "-";
           statTitleChars.textContent = "-";
+          statContentChars.textContent = "-";
           statAverageContent.textContent = "-";
         }
       }
@@ -682,10 +688,12 @@
 
           statCount.textContent = data.count ?? 0;
           statTitleChars.textContent = data.total_title_characters ?? 0;
+          statContentChars.textContent = data.total_content_characters ?? 0;
           statAverageContent.textContent = data.average_content_length ?? 0;
         } catch (error) {
           statCount.textContent = "-";
           statTitleChars.textContent = "-";
+          statContentChars.textContent = "-";
           statAverageContent.textContent = "-";
         }
       }
