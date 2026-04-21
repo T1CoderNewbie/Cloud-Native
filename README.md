@@ -152,6 +152,7 @@ Deployment-related files:
 - `k8s/`
 - `scripts/create-k8s-secret.sh`
 - `scripts/apply-k8s.sh`
+- `scripts/check-aws-preflight.sh`
 - `terraform/`
 - `.github/workflows/ci-cd.yml`
 - `.github/workflows/deploy-aws.yml`
@@ -187,6 +188,18 @@ Prepare application secrets for Kubernetes:
 
 ```bash
 cp .env.aws.example .env.aws
+```
+
+Run a quick local preflight check before provisioning or deploying:
+
+```bash
+bash scripts/check-aws-preflight.sh
+```
+
+If you only want to inspect the current state without failing on missing tools yet:
+
+```bash
+FAIL_ON_MISSING=false bash scripts/check-aws-preflight.sh
 ```
 
 After filling in real values inside `.env.aws`, you can create the Kubernetes secret manifest or apply it directly:
