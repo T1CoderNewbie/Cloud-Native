@@ -26,11 +26,11 @@ output "route53_record_fqdn" {
 output "deployment_summary" {
   description = "Quick summary values to help wire the application into EKS."
   value = {
-    environment       = var.environment
-    aws_region        = var.aws_region
+    environment          = var.environment
+    aws_region           = var.aws_region
     kubernetes_namespace = "cloud-notes"
-    eks_cluster_name  = module.eks.cluster_name
-    rds_endpoint      = aws_db_instance.postgres.address
-    redis_endpoint    = aws_elasticache_replication_group.redis.primary_endpoint_address
+    eks_cluster_name     = module.eks.cluster_name
+    rds_endpoint         = aws_db_instance.postgres.address
+    redis_endpoint       = aws_elasticache_replication_group.redis.primary_endpoint_address
   }
 }
