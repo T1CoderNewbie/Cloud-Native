@@ -3,11 +3,55 @@ name: Deploy AWS
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
   PYTHON_VERSION: "3.12"
 
 jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate required deployment secrets
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          KAFKA_BOOTSTRAP_SERVERS: ${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}
+          APP_AWS_ACCESS_KEY_ID: ${{ secrets.APP_AWS_ACCESS_KEY_ID }}
+          APP_AWS_SECRET_ACCESS_KEY: ${{ secrets.APP_AWS_SECRET_ACCESS_KEY }}
+          AWS_BUCKET_NAME: ${{ secrets.AWS_BUCKET_NAME }}
+        run: |
+          required_vars=(
+            DOCKERHUB_USERNAME
+            DOCKERHUB_TOKEN
+            AWS_ACCESS_KEY_ID
+            AWS_SECRET_ACCESS_KEY
+            AWS_REGION
+            EKS_CLUSTER_NAME
+            DATABASE_URL
+            REDIS_URL
+            KAFKA_BOOTSTRAP_SERVERS
+            APP_AWS_ACCESS_KEY_ID
+            APP_AWS_SECRET_ACCESS_KEY
+            AWS_BUCKET_NAME
+          )
+
+          for name in "${required_vars[@]}"; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing required GitHub secret: ${name}"
+              exit 1
+            fi
+          done
+
   build_and_push:
+    needs: preflight
     runs-on: ubuntu-latest
     outputs:
       image: ${{ steps.image.outputs.image }}
@@ -38,7 +82,7 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/cloud-notes-app:latest
 
   deploy_to_eks:
-    needs: build_and_push
+    needs: [preflight, build_and_push]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
@@ -58,27 +102,25 @@ jobs:
         run: aws eks update-kubeconfig --name "${{ secrets.EKS_CLUSTER_NAME }}" --region "${{ secrets.AWS_REGION }}"
 
       - name: Create namespace and secret
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          KAFKA_BOOTSTRAP_SERVERS: ${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.APP_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.APP_AWS_SECRET_ACCESS_KEY }}
+          AWS_BUCKET_NAME: ${{ secrets.AWS_BUCKET_NAME }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          S3_ENDPOINT_URL: ${{ secrets.S3_ENDPOINT_URL }}
+          S3_PUBLIC_BASE_URL: ${{ secrets.S3_PUBLIC_BASE_URL }}
         run: |
           kubectl apply -f k8s/base/namespace.yaml
-          kubectl -n cloud-notes create secret generic cloud-notes-secrets \
-            --from-literal=DATABASE_URL='${{ secrets.DATABASE_URL }}' \
-            --from-literal=REDIS_URL='${{ secrets.REDIS_URL }}' \
-            --from-literal=KAFKA_BOOTSTRAP_SERVERS='${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}' \
-            --from-literal=AWS_ACCESS_KEY_ID='${{ secrets.APP_AWS_ACCESS_KEY_ID }}' \
-            --from-literal=AWS_SECRET_ACCESS_KEY='${{ secrets.APP_AWS_SECRET_ACCESS_KEY }}' \
-            --from-literal=AWS_BUCKET_NAME='${{ secrets.AWS_BUCKET_NAME }}' \
-            --from-literal=S3_ENDPOINT_URL='${{ secrets.S3_ENDPOINT_URL }}' \
-            --from-literal=S3_PUBLIC_BASE_URL='${{ secrets.S3_PUBLIC_BASE_URL }}' \
-            --dry-run=client -o yaml | kubectl apply -f -
+          APPLY_CHANGES=true NAMESPACE=cloud-notes bash scripts/create-k8s-secret.sh
 
       - name: Deploy manifests
+        env:
+          APP_IMAGE: ${{ needs.build_and_push.outputs.image }}
         run: |
-          kubectl apply -f k8s/base/configmap.yaml
-          kubectl apply -f k8s/base/service.yaml
-          kubectl apply -f k8s/base/deployment.yaml
-          kubectl apply -f k8s/base/destinationrule.yaml
-          kubectl apply -f k8s/base/gateway.yaml
-          kubectl apply -f k8s/base/virtualservice.yaml
-          kubectl apply -f k8s/base/hpa.yaml
-          kubectl -n cloud-notes set image deployment/cloud-notes-app cloud-notes-app=${{ needs.build_and_push.outputs.image }}
-          kubectl rollout status deployment/cloud-notes-app -n cloud-notes
+          NAMESPACE=cloud-notes APP_IMAGE="${APP_IMAGE}" bash scripts/apply-k8s.sh
+
+      - name: Show deployment status
+        run: kubectl get pods,svc,deployment -n cloud-notes
