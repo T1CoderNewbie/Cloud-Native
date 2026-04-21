@@ -150,8 +150,11 @@ Deployment-related files:
 - `Dockerfile`
 - `docker-compose.yml`
 - `k8s/`
+- `scripts/create-k8s-secret.sh`
+- `scripts/apply-k8s.sh`
 - `terraform/`
 - `.github/workflows/ci-cd.yml`
+- `.github/workflows/deploy-aws.yml`
 
 Workflow note:
 
@@ -163,6 +166,61 @@ GitHub Actions tip:
 - Older commits may still show a red `X` if they were pushed before the workflow was fixed.
 - You do not need to rewrite history for that. What matters is that your newest commits pass the current `CI-CD` workflow.
 - For AWS deployment, open the `Deploy AWS` workflow in GitHub Actions and run it manually after adding the required secrets.
+
+## AWS Deployment Prep
+
+Recommended tools on your local machine:
+
+- Docker
+- AWS CLI
+- `kubectl`
+- `istioctl`
+- Terraform
+
+Prepare Terraform values:
+
+```bash
+cp terraform/terraform.tfvars.example terraform/terraform.tfvars
+```
+
+Prepare application secrets for Kubernetes:
+
+```bash
+cp .env.aws.example .env.aws
+```
+
+After filling in real values inside `.env.aws`, you can create the Kubernetes secret manifest or apply it directly:
+
+```bash
+ENV_FILE=.env.aws bash scripts/create-k8s-secret.sh
+ENV_FILE=.env.aws APPLY_CHANGES=true bash scripts/create-k8s-secret.sh
+```
+
+When you already have an image in Docker Hub, deploy the base manifests and set the image in one go:
+
+```bash
+CREATE_K8S_SECRET=true \
+SECRET_ENV_FILE=.env.aws \
+APP_IMAGE=docker.io/<dockerhub-username>/cloud-notes-app:latest \
+bash scripts/apply-k8s.sh
+```
+
+GitHub secrets expected by `Deploy AWS`:
+
+- `DOCKERHUB_USERNAME`
+- `DOCKERHUB_TOKEN`
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_REGION`
+- `EKS_CLUSTER_NAME`
+- `DATABASE_URL`
+- `REDIS_URL`
+- `KAFKA_BOOTSTRAP_SERVERS`
+- `APP_AWS_ACCESS_KEY_ID`
+- `APP_AWS_SECRET_ACCESS_KEY`
+- `AWS_BUCKET_NAME`
+- `S3_ENDPOINT_URL`
+- `S3_PUBLIC_BASE_URL`
 
 ## Assignment Notes
 
