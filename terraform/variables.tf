@@ -124,6 +124,12 @@ variable "redis_node_type" {
   default     = "cache.t4g.micro"
 }
 
+variable "s3_bucket_name" {
+  description = "Optional S3 bucket name used by the upload endpoint. Leave blank to let Terraform derive one."
+  type        = string
+  default     = ""
+}
+
 variable "route53_zone_id" {
   description = "Optional Route 53 hosted zone ID."
   type        = string

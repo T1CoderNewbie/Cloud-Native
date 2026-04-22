@@ -8,5 +8,11 @@ __pycache__
 *.pyo
 .DS_Store
 .env
+.env.aws
 data
+terraform/.terraform
+terraform/.terraform.lock.hcl
+terraform/terraform.tfvars
+terraform.tfstate
+terraform.tfstate.*
 docs/video/*.mp4

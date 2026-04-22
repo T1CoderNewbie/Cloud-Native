@@ -58,7 +58,7 @@ for name in "${optional_secret_vars[@]}"; do
 done
 
 if [[ "${APPLY_CHANGES}" == "true" ]]; then
-  "${cmd[@]}" | kubectl apply -f -
+  "${cmd[@]}" | kubectl apply --validate=false -f -
 else
   "${cmd[@]}"
 fi

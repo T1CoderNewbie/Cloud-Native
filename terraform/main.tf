@@ -1,5 +1,12 @@
+data "aws_caller_identity" "current" {}
+
 locals {
   name = "${var.project_name}-${var.environment}"
+  s3_bucket_name = lower(
+    var.s3_bucket_name != ""
+    ? var.s3_bucket_name
+    : "${local.name}-${data.aws_caller_identity.current.account_id}-${var.aws_region}-uploads"
+  )
   tags = {
     Project     = var.project_name
     Environment = var.environment
@@ -68,6 +75,9 @@ module "eks" {
       max_size       = 3
       desired_size   = 2
       subnet_ids     = module.vpc.private_subnets
+      iam_role_additional_policies = {
+        s3_upload = aws_iam_policy.s3_upload.arn
+      }
     }
   }
 
@@ -177,6 +187,88 @@ resource "aws_elasticache_replication_group" "redis" {
   at_rest_encryption_enabled = false
   transit_encryption_enabled = false
   engine                     = "redis"
+
+  tags = local.tags
+}
+
+resource "aws_s3_bucket" "uploads" {
+  bucket        = local.s3_bucket_name
+  force_destroy = true
+
+  tags = merge(local.tags, { Name = "${local.name}-uploads" })
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "uploads" {
+  bucket = aws_s3_bucket.uploads.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "uploads" {
+  bucket = aws_s3_bucket.uploads.id
+
+  block_public_acls       = true
+  ignore_public_acls      = true
+  block_public_policy     = false
+  restrict_public_buckets = false
+}
+
+data "aws_iam_policy_document" "uploads_public_read" {
+  statement {
+    sid    = "PublicReadUploadedObjects"
+    effect = "Allow"
+
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+
+    actions = ["s3:GetObject"]
+    resources = [
+      "${aws_s3_bucket.uploads.arn}/uploads/*",
+    ]
+  }
+}
+
+resource "aws_s3_bucket_policy" "uploads_public_read" {
+  bucket = aws_s3_bucket.uploads.id
+  policy = data.aws_iam_policy_document.uploads_public_read.json
+
+  depends_on = [aws_s3_bucket_public_access_block.uploads]
+}
+
+data "aws_iam_policy_document" "s3_upload" {
+  statement {
+    sid     = "AllowListUploadsBucket"
+    effect  = "Allow"
+    actions = ["s3:ListBucket"]
+    resources = [
+      aws_s3_bucket.uploads.arn,
+    ]
+  }
+
+  statement {
+    sid    = "AllowUploadObjectAccess"
+    effect = "Allow"
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:DeleteObject",
+    ]
+    resources = [
+      "${aws_s3_bucket.uploads.arn}/*",
+    ]
+  }
+}
+
+resource "aws_iam_policy" "s3_upload" {
+  name        = "${local.name}-s3-upload"
+  description = "Allow Cloud Notes App to store and retrieve uploads from S3."
+  policy      = data.aws_iam_policy_document.s3_upload.json
 
   tags = local.tags
 }

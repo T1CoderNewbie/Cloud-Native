@@ -183,6 +183,36 @@
         padding: 22px;
       }
 
+      .upload-card {
+        margin-top: 18px;
+        padding: 18px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.72);
+      }
+
+      .upload-card h3 {
+        margin: 0 0 8px;
+        font-size: 0.98rem;
+      }
+
+      .upload-card p {
+        margin: 0 0 14px;
+        color: var(--muted);
+      }
+
+      .upload-link {
+        display: inline-flex;
+        margin-top: 8px;
+        color: var(--accent);
+        text-decoration: none;
+        word-break: break-all;
+      }
+
+      .upload-link.hidden {
+        display: none;
+      }
+
       .composer h2,
       .notes-panel h2 {
         margin: 0 0 12px;
@@ -535,6 +565,27 @@
             <button class="ghost-btn hidden" id="cancel-edit-btn" type="button">Cancel Edit</button>
             <div id="flash" class="flash"></div>
           </form>
+
+          <section class="upload-card">
+            <h3>Upload a File to S3</h3>
+            <p>Select a file below to test the cloud storage integration in your AWS deployment.</p>
+
+            <form id="upload-form">
+              <div class="field">
+                <label for="upload-file">File</label>
+                <input id="upload-file" name="file" type="file" />
+              </div>
+              <button class="ghost-btn" id="upload-btn" type="submit">Upload File</button>
+              <div id="upload-flash" class="flash"></div>
+              <a
+                id="upload-link"
+                class="upload-link hidden"
+                href="#"
+                target="_blank"
+                rel="noreferrer"
+              ></a>
+            </form>
+          </section>
         </section>
 
         <section class="notes-panel">
@@ -573,6 +624,11 @@
 
     <script>
       const noteForm = document.getElementById("note-form");
+      const uploadForm = document.getElementById("upload-form");
+      const uploadFileInput = document.getElementById("upload-file");
+      const uploadBtn = document.getElementById("upload-btn");
+      const uploadFlash = document.getElementById("upload-flash");
+      const uploadLink = document.getElementById("upload-link");
       const titleInput = document.getElementById("title");
       const contentInput = document.getElementById("content");
       const composerTitle = document.getElementById("composer-title");
@@ -604,6 +660,16 @@
       function clearFlash() {
         flash.textContent = "";
         flash.className = "flash";
+      }
+
+      function setUploadFlash(message, type = "success") {
+        uploadFlash.textContent = message;
+        uploadFlash.className = `flash ${type}`;
+      }
+
+      function clearUploadFlash() {
+        uploadFlash.textContent = "";
+        uploadFlash.className = "flash";
       }
 
       function updateComposerCounters() {
@@ -862,6 +928,52 @@
       exportBtn.addEventListener("click", () => {
         const query = currentSearchTerm ? `?q=${encodeURIComponent(currentSearchTerm)}` : "";
         window.open(`/notes/export${query}`, "_blank", "noopener,noreferrer");
+      });
+      uploadForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        clearUploadFlash();
+
+        const file = uploadFileInput.files?.[0];
+        if (!file) {
+          setUploadFlash("Please choose a file first.", "error");
+          return;
+        }
+
+        const payload = new FormData();
+        payload.append("file", file);
+        uploadBtn.disabled = true;
+
+        try {
+          const response = await fetch("/upload", {
+            method: "POST",
+            body: payload,
+          });
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || "Upload failed.");
+          }
+
+          setUploadFlash(`Uploaded "${file.name}" successfully.`);
+          if (data.url) {
+            uploadLink.href = data.url;
+            uploadLink.textContent = data.url;
+            uploadLink.classList.remove("hidden");
+          } else {
+            uploadLink.href = "#";
+            uploadLink.textContent = "";
+            uploadLink.classList.add("hidden");
+          }
+
+          uploadForm.reset();
+        } catch (error) {
+          uploadLink.href = "#";
+          uploadLink.textContent = "";
+          uploadLink.classList.add("hidden");
+          setUploadFlash(error.message, "error");
+        } finally {
+          uploadBtn.disabled = false;
+        }
       });
       titleInput.addEventListener("input", updateComposerCounters);
       contentInput.addEventListener("input", updateComposerCounters);
