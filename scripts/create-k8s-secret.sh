@@ -21,10 +21,6 @@ fi
 required_vars=(
   DATABASE_URL
   REDIS_URL
-  KAFKA_BOOTSTRAP_SERVERS
-  AWS_ACCESS_KEY_ID
-  AWS_SECRET_ACCESS_KEY
-  AWS_BUCKET_NAME
   AWS_REGION
 )
 
@@ -41,16 +37,25 @@ cmd=(
   create secret generic "${SECRET_NAME}"
   --from-literal=DATABASE_URL="${DATABASE_URL}"
   --from-literal=REDIS_URL="${REDIS_URL}"
-  --from-literal=KAFKA_BOOTSTRAP_SERVERS="${KAFKA_BOOTSTRAP_SERVERS}"
-  --from-literal=AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}"
-  --from-literal=AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}"
-  --from-literal=AWS_BUCKET_NAME="${AWS_BUCKET_NAME}"
   --from-literal=AWS_REGION="${AWS_REGION}"
-  --from-literal=S3_ENDPOINT_URL="${S3_ENDPOINT_URL:-}"
-  --from-literal=S3_PUBLIC_BASE_URL="${S3_PUBLIC_BASE_URL:-}"
   --dry-run=client
   -o yaml
 )
+
+optional_secret_vars=(
+  KAFKA_BOOTSTRAP_SERVERS
+  AWS_ACCESS_KEY_ID
+  AWS_SECRET_ACCESS_KEY
+  AWS_BUCKET_NAME
+  S3_ENDPOINT_URL
+  S3_PUBLIC_BASE_URL
+)
+
+for name in "${optional_secret_vars[@]}"; do
+  if [[ -n "${!name:-}" ]]; then
+    cmd+=(--from-literal="${name}=${!name}")
+  fi
+done
 
 if [[ "${APPLY_CHANGES}" == "true" ]]; then
   "${cmd[@]}" | kubectl apply -f -

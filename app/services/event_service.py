@@ -18,10 +18,15 @@ def get_kafka_producer() -> Optional[KafkaProducer]:
         return None
 
     if _producer is None:
-        _producer = KafkaProducer(
-            bootstrap_servers=[server.strip() for server in bootstrap_servers.split(",") if server.strip()],
-            value_serializer=lambda value: json.dumps(value).encode("utf-8"),
-        )
+        try:
+            _producer = KafkaProducer(
+                bootstrap_servers=[server.strip() for server in bootstrap_servers.split(",") if server.strip()],
+                value_serializer=lambda value: json.dumps(value).encode("utf-8"),
+            )
+        except KafkaError:
+            return None
+        except Exception:
+            return None
 
     return _producer
 

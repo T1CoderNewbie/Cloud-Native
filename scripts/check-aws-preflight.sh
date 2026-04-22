@@ -58,7 +58,12 @@ check_env_value() {
     return
   fi
 
-  if [[ -z "${value}" || "${value}" == "CHANGE_ME" || "${value}" == "replace-me" || "${value}" == "your-s3-bucket" ]]; then
+  if [[ -z "${value}" \
+    || "${value}" == "CHANGE_ME" \
+    || "${value}" == "replace-me" \
+    || "${value}" == "your-s3-bucket" \
+    || "${value}" == *"CHANGE_ME"* \
+    || "${value}" == *"REPLACE_WITH"* ]]; then
     report_warn "Placeholder or empty value for ${name} in ${file}"
     return
   fi

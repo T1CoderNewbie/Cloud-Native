@@ -44,16 +44,21 @@ module "eks" {
   kubernetes_version = var.kubernetes_version
 
   endpoint_public_access                   = true
+  endpoint_private_access                  = true
   enable_cluster_creator_admin_permissions = true
   authentication_mode                      = "API_AND_CONFIG_MAP"
   vpc_id                                   = module.vpc.vpc_id
   subnet_ids                               = module.vpc.private_subnets
 
   addons = {
-    coredns                = {}
-    eks-pod-identity-agent = {}
-    kube-proxy             = {}
-    vpc-cni                = {}
+    coredns = {}
+    eks-pod-identity-agent = {
+      before_compute = true
+    }
+    kube-proxy = {}
+    vpc-cni = {
+      before_compute = true
+    }
   }
 
   eks_managed_node_groups = {
@@ -63,6 +68,17 @@ module "eks" {
       max_size       = 3
       desired_size   = 2
       subnet_ids     = module.vpc.private_subnets
+    }
+  }
+
+  node_security_group_additional_rules = {
+    ingress_istiod_webhook = {
+      description                   = "Allow Istiod sidecar injection webhook from the EKS control plane"
+      protocol                      = "tcp"
+      from_port                     = 15017
+      to_port                       = 15017
+      type                          = "ingress"
+      source_cluster_security_group = true
     }
   }
 
@@ -102,7 +118,7 @@ resource "aws_db_subnet_group" "postgres" {
 resource "aws_db_instance" "postgres" {
   identifier              = "${local.name}-postgres"
   engine                  = "postgres"
-  engine_version          = "16.3"
+  engine_version          = "16.13"
   instance_class          = var.db_instance_class
   allocated_storage       = var.db_allocated_storage
   max_allocated_storage   = 100

@@ -3,10 +3,12 @@ __pycache__/
 *.pyc
 data/
 .env
+.env.aws
 .pytest_cache/
 .terraform/
 terraform/.terraform/
 terraform/.terraform.lock.hcl
+terraform/terraform.tfvars
 terraform.tfstate
 terraform.tfstate.*
 .DS_Store

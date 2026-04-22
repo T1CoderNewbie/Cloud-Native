@@ -23,10 +23,6 @@ jobs:
           EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           REDIS_URL: ${{ secrets.REDIS_URL }}
-          KAFKA_BOOTSTRAP_SERVERS: ${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}
-          APP_AWS_ACCESS_KEY_ID: ${{ secrets.APP_AWS_ACCESS_KEY_ID }}
-          APP_AWS_SECRET_ACCESS_KEY: ${{ secrets.APP_AWS_SECRET_ACCESS_KEY }}
-          AWS_BUCKET_NAME: ${{ secrets.AWS_BUCKET_NAME }}
         run: |
           required_vars=(
             DOCKERHUB_USERNAME
@@ -37,10 +33,6 @@ jobs:
             EKS_CLUSTER_NAME
             DATABASE_URL
             REDIS_URL
-            KAFKA_BOOTSTRAP_SERVERS
-            APP_AWS_ACCESS_KEY_ID
-            APP_AWS_SECRET_ACCESS_KEY
-            AWS_BUCKET_NAME
           )
 
           for name in "${required_vars[@]}"; do
