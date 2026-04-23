@@ -43,6 +43,13 @@ module "vpc" {
   tags = local.tags
 }
 
+resource "aws_route53_zone" "cloud_notes" {
+  count = var.route53_zone_id == "" && var.route53_zone_name != "" ? 1 : 0
+
+  name = var.route53_zone_name
+  tags = merge(local.tags, { Name = var.route53_zone_name })
+}
+
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 21.0"
@@ -274,8 +281,13 @@ resource "aws_iam_policy" "s3_upload" {
 }
 
 resource "aws_route53_record" "cloud_notes" {
-  count   = var.route53_zone_id != "" && var.route53_record_name != "" && var.load_balancer_dns_name != "" && var.load_balancer_zone_id != "" ? 1 : 0
-  zone_id = var.route53_zone_id
+  count = (
+    var.route53_record_name != ""
+    && var.load_balancer_dns_name != ""
+    && var.load_balancer_zone_id != ""
+    && (var.route53_zone_id != "" || var.route53_zone_name != "")
+  ) ? 1 : 0
+  zone_id = var.route53_zone_id != "" ? var.route53_zone_id : aws_route53_zone.cloud_notes[0].zone_id
   name    = var.route53_record_name
   type    = "A"
 

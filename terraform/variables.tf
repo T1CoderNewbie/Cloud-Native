@@ -141,6 +141,12 @@ variable "route53_zone_id" {
   }
 }
 
+variable "route53_zone_name" {
+  description = "Optional public Route 53 hosted zone name to create when route53_zone_id is not provided."
+  type        = string
+  default     = ""
+}
+
 variable "route53_record_name" {
   description = "Optional Route 53 record name."
   type        = string

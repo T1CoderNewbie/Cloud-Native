@@ -11,5 +11,22 @@ spec:
         number: 80
         name: http
         protocol: HTTP
+      tls:
+        httpsRedirect: true
+      hosts:
+        - "khanhhoang.page"
+    - port:
+        number: 80
+        name: http-wildcard
+        protocol: HTTP
       hosts:
         - "*"
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        credentialName: khanhhoang-page-tls
+      hosts:
+        - "khanhhoang.page"

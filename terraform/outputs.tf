@@ -28,6 +28,16 @@ output "route53_record_fqdn" {
   value       = try(aws_route53_record.cloud_notes[0].fqdn, "")
 }
 
+output "route53_zone_id" {
+  description = "Effective Route 53 hosted zone ID."
+  value       = var.route53_zone_id != "" ? var.route53_zone_id : try(aws_route53_zone.cloud_notes[0].zone_id, "")
+}
+
+output "route53_name_servers" {
+  description = "Route 53 public hosted zone name servers when Terraform creates the zone."
+  value       = try(aws_route53_zone.cloud_notes[0].name_servers, [])
+}
+
 output "deployment_summary" {
   description = "Quick summary values to help wire the application into EKS."
   value = {
