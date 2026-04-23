@@ -263,6 +263,7 @@ GitHub secrets expected by `Deploy AWS`:
 - Keep the GitHub repository public.
 - Put the GitHub link at the beginning of your report.
 - The final video is included at `docs/video/cloud-notes-video.mp4`.
+- Fallback video link if GitHub download is slow: [Google Drive](https://drive.google.com/file/d/1ghwR7dlZIiLOokz0_5C-jXiMojgpB5Vs/view?usp=sharing)
 - Keep commit history meaningful and authentic.
 - Remove personal information before submission.
 
