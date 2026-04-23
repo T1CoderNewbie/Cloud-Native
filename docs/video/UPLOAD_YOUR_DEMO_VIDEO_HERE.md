@@ -1,7 +1,7 @@
 # Demo Video
 
-Place your final demonstration video file in this folder, for example:
+The final demonstration video for this submission is included in this folder:
 
-- `docs/video/cloud-notes-demo.mp4`
+- `docs/video/cloud-notes-final-demo.mp4`
 
-The assignment email says the video must be inside the GitHub repository, so do not leave only an external link.
+The assignment email says the video must be inside the GitHub repository, so the final video file is stored here directly in the repo.
