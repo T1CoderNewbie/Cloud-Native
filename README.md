@@ -6,6 +6,17 @@ Cloud Notes App is a simple cloud-native notes API built for a Developing for th
 
 This project demonstrates how a locally developed application can be prepared for cloud deployment using containerisation, infrastructure-as-code, and Kubernetes-based deployment practices. The application allows users to create, view, update, and delete notes, while also supporting AWS-oriented services such as RDS, S3, Redis, Kafka, EKS, and Istio.
 
+## Live Deployment
+
+The current production deployment is available at:
+
+- Application: `https://khanhhoang.page`
+- Live health check: `https://khanhhoang.page/health/live`
+- Ready health check: `https://khanhhoang.page/health/ready`
+- Public repository: `https://github.com/T1CoderNewbie/Cloud-Native`
+
+The live environment currently runs on AWS with Route 53, an internet-facing load balancer, Istio ingress, Amazon EKS, Amazon RDS, Amazon ElastiCache Redis, and Amazon S3.
+
 ## Technology Stack
 
 - Python Flask
@@ -14,8 +25,10 @@ This project demonstrates how a locally developed application can be prepared fo
 - Kafka
 - Amazon S3
 - Docker and Docker Compose
+- AWS ECR or Docker Hub
 - Kubernetes on AWS EKS
 - Istio
+- Route 53
 - Terraform
 - GitHub Actions
 
@@ -136,14 +149,24 @@ This repo already includes:
 - Terraform infrastructure in `terraform/`
 - CI/CD workflow in `.github/workflows/ci-cd.yml`
 
+Current production deployment summary:
+
+- Container image hosted in AWS ECR
+- Application deployed to Amazon EKS
+- Database hosted in Amazon RDS PostgreSQL
+- Cache hosted in Amazon ElastiCache Redis
+- File upload stored in Amazon S3
+- Public DNS managed through Route 53
+- Domain exposed at `https://khanhhoang.page`
+
 Basic cloud deployment flow:
 
-1. Build and push Docker image to Docker Hub.
+1. Build and push Docker image to Docker Hub or AWS ECR.
 2. Provision AWS infrastructure with Terraform.
 3. Configure `kubectl` for your EKS cluster.
 4. Install Istio.
 5. Apply Kubernetes manifests.
-6. Point Route 53 to the load balancer if needed.
+6. Point Route 53 to the load balancer and enable the production domain.
 
 Deployment-related files:
 
@@ -246,3 +269,4 @@ GitHub secrets expected by `Deploy AWS`:
 ## Extra Docs
 
 - Architecture: [docs/architecture.md](docs/architecture.md)
+- Technical report outline: [docs/technical-report-outline.md](docs/technical-report-outline.md)
