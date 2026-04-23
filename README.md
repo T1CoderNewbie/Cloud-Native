@@ -269,4 +269,3 @@ GitHub secrets expected by `Deploy AWS`:
 ## Extra Docs
 
 - Architecture: [docs/architecture.md](docs/architecture.md)
-- Technical report outline: [docs/technical-report-outline.md](docs/technical-report-outline.md)
